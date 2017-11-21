@@ -1,3 +1,5 @@
+'use strict';
+
 function generateDisplayString(str, delimiter) {
   return str
     .split(delimiter)
