@@ -1,15 +1,57 @@
-var allProducts = [];
-var productNames = ['boots', 'chair', 'scissors']; // TODO: see the pattern here, and what you need to fill in?
-
-function Product(name, path) {
-  // TODO: Build your constructor and necessary properties.
+function generateDisplayString(str, delimiter) {
+  return str
+    .split(delimiter)
+    .map(function(word) {
+      return word[0].toUpperCase() + word.substr(1);
+    })
+    .join(' ');
 }
 
-// TODO: Don't forget to build your objects. How can you do this withough having to write 14 lines of `new Product(., ., .)`?
+function Product(filenameBase) {
+  this.baseName = filenameBase;
+  this.displayName = generateDisplayString(filenameBase, '-');
+  this.voteTally = 0;
+  this.filePath = '/img/'.concat(filenameBase).concat('.jpg');
+}
+
+/*****************************************************************************
+ * All Execution and Globals Below
+ */
+var productList = [];
+var baseProductNames = [
+  'baby-broom',
+  'banana',
+  'bathroom',
+  'boots',
+  'bubblegum',
+  'cthulhu',
+  'dragon',
+  'pen',
+  'scissors',
+  'six-pack-bicycle',
+  'tauntaun',
+  'usb',
+  'wine-glass',
+  'bag',
+  'baseball-wineholder',
+  'big-chair',
+  'breakfast',
+  'chair',
+  'dog-duck',
+  'neck-protector',
+  'pet-sweep',
+  'shark',
+  'sweep',
+  'unicorn',
+  'water-can'
+];
 
 var productRank = {
-  // TODO: All the properties of the object! What do you think you need? Try to write one piece at a time and make sure it does what you want before writing a little more.
-  // NOTE: A-C-P reminder... Make very intentional and iterative changes to your code, and then A-C-P.
+  imageEls: [
+    document.getElementById('img-1'),
+    document.getElementById('img-2'),
+    document.getElementById('img-3'),
+  ],
 
   getRandomIndex: function() {
     // TODO: Hmm... what's going to happen here?
@@ -33,7 +75,25 @@ var productRank = {
 
   onClick: function() {
     // TODO: Hmm... what's going to happen here?
+  }
 };
 
-productRank.imageEls.addEventListener('click', productRank.onClick);
-productRank.displayImages();
+// productRank.imageEls.addEventListener('click', productRank.onClick);
+// productRank.displayImages();
+
+function initElement() {
+  var img = document.getElementById('img-1');
+  // NOTE: showAlert(); or showAlert(param); will NOT work here.
+  // Must be a reference to a function name, not a function call.
+  console.log('Added click listener!');
+  img.addEventListener('click', showAlert);
+}
+
+function showAlert(e) {
+  e.preventDefault();
+  console.log('Entered Event');
+  console.log('target:', e.target);
+  console.log('target.id:', e.target.id);
+}
+
+initElement();
