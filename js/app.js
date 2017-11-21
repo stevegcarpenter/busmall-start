@@ -2,16 +2,15 @@
 
 function generateDisplayString(str, delimiter) {
   return str
-    .split(delimiter)
-    .map(function(word) {
+    .split(delimiter).map(function(word) {
       return word[0].toUpperCase() + word.substr(1);
-    })
-    .join(' ');
+    }).join(' ');
 }
 
 function Product(filenameBase) {
   this.displayName = generateDisplayString(filenameBase, '-');
-  this.src = 'img/'.concat(filenameBase).concat('.jpg');
+  this.baseName = filenameBase;
+  this.path = 'img/'.concat(filenameBase).concat('.jpg');
   this.voteTally = 0;
   this.shownTally = 0;
 }
@@ -20,74 +19,78 @@ function Product(filenameBase) {
  * All Execution and Globals Below
  */
 var baseProductNames = [
-  'baby-broom',
-  'banana',
-  'bathroom',
-  'boots',
-  'bubblegum',
-  'cthulhu',
-  'dragon',
-  'pen',
-  'scissors',
-  'six-pack-bicycle',
-  'tauntaun',
-  'usb',
-  'wine-glass',
   'bag',
+  'banana',
   'baseball-wineholder',
+  'bathroom',
   'big-chair',
+  'boots',
   'breakfast',
+  'bubblegum',
   'chair',
+  'cthulhu',
   'dog-duck',
+  'dragon',
   'neck-protector',
+  'pen',
   'pet-sweep',
+  'scissors',
   'shark',
+  'six-pack-bicycle',
   'sweep',
+  'tauntaun',
   'unicorn',
-  'water-can'
+  'usb',
+  'water-can',
+  'wine-glass',
 ];
 
 var productRank = {
-  productHash: {}, /* look up table for events */
+  productHash: {}, /* key is product path */
   productList: [], /* list of all products */
-  unseen: [], /* only products that haven't been seen yet */
+  /* two bags to hold products */
+  bag: {
+    a: [],
+    b: [],
+  },
   imageIds: ['img-1', 'img-2', 'img-3'],
   imageEls: [],
 
   generateProducts: function () {
-    baseProductNames.map(function (baseProductName) {
-      var prod = new Product(baseProductName);
+    for (let i = 0; i < baseProductNames.length; i++) {
+      var prod = new Product(baseProductNames[i]);
+      console.log('Product:', prod);
       // add it to the hash based on filepath
-      this.productHash[prod.src] = prod;
+      this.productHash[prod.path] = prod;
       // add it to the product list
       this.productList.push(prod);
-    });
+    }
   },
 
   configureListeners: function () {
-    this.imageIds.map(function (imgId) {
+    for (let i = 0; i < this.imageIds.length; i++) {
       // obtain the image element
-      var imgEl = document.getElementById(imgId);
+      var imgEl = document.getElementById(this.imageIds[i]);
       // store it for retrieval
       this.imageEls.push(imgEl);
       imgEl.addEventListener('click', this.onClick);
-    });
+    }
   },
 
   initGame: function () {
     // clear product stats
     this.productList.map(function (prod) {
+    for (var i in this.productList) {
+      prod = this.productList[i];
       prod.voteTally = 0;
       prod.shownTally = 0;
-      this.unseen.push(prod);
-    });
+      this.bag.a.push(prod);
+    }
   },
 
   getRandomIndex: function(arrayLength) {
-    var min = 0;
-    var max = arrayLength - 1;
     // Generate a random index number that falls within our product list
-    var ran = Math.floor(Math.random() * (max - min + 1)) + min;
+    var ran = Math.floor(Math.random() * arrayLength);
     console.log('RandomIndex:', ran);
     return ran;
   },
@@ -97,13 +100,13 @@ var productRank = {
     this.imageEls.map(function (imgEl) {
       let idx;
       var prod;
-      // Unseen products have top priority
-      if (this.unseen.length > 0) {
-        idx = this.getRandomIndex(this.unseen.length);
-        // get product, remove it from unseen list
-        prod = this.unseen.splice(idx, 1)[0];
+      // Bag a products have top priority
+      if (this.bag.a.length > 0) {
+        idx = this.getRandomIndex(this.bag.a.length);
+        // get product, remove it from bag-a list
+        prod = this.bag.a.splice(idx, 1)[0];
         // add to the dupeLUT
-        dupeLUT[prod.src] = true;
+        dupeLUT[prod.path] = true;
       } else {
         // find an image, avoid duplicate
         do {
@@ -136,8 +139,8 @@ var productRank = {
 };
 
 productRank.generateProducts();
-productRank.configureListeners();
-productRank.displayImages();
+// productRank.configureListeners();
+// productRank.displayImages();
 
 // function initElement() {
 //   var img = document.getElementById('img-1');
