@@ -91,18 +91,20 @@ var productRank = {
     section = document.getElementById('results-section');
     section.innerHTML = '';
 
+    // empty both bags, set bag-a active and then fill bag-a
+    // games always start picking from on bag-a
+    this.bag.a = [];
+    this.bag.b = [];
+    this.bag.active = 'a';
+    this.clickCount = 0;
+
     // clear product stats
     for (let i in this.productList) {
       let prod = this.productList[i];
-      prod.voteTally = 0;
-      prod.shownTally = 0;
       // bag-a is the starting bag
       this.bag.a.push(prod);
       console.log('Initializing product:', prod);
     }
-    // set bag-b empty
-    this.bag.b = [];
-    this.clickCount = 0;
   },
 
   getRandomIndex: function(arrayLength) {
@@ -174,6 +176,7 @@ var productRank = {
     // clear the button section first
     section.innerHTML = '';
     button.type = 'button';
+    button.className = 'game-button'
     button.value = text;
     section.appendChild(button);
     button.addEventListener('click', handler);
@@ -181,30 +184,34 @@ var productRank = {
 
   showResults: function() {
     var section = document.getElementById('results-section');
-    var table = document.createElement('table');
-    section.appendChild(table);
+    var canvas = document.createElement('canvas');
+    section.appendChild(canvas);
+    canvas.id = 'results-chart';
 
-    productRank.appendTableRow(table, ['', 'Score', 'Percent Chosen'], 'th');
-
-    for (var i in productRank.productList) {
-      let prod = productRank.productList[i];
-      let percent = Math.floor((prod.voteTally * 100) / prod.shownTally);
-      productRank.appendTableRow(table, [prod.displayName, prod.voteTally, isNaN(percent) ? '0%' : percent.toString().concat('%')], 'td');
-    }
+    var ctx = canvas.getContext('2d');
+    var myChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: productRank.productList.map(function (prod) { return prod.displayName; }),
+        datasets: [{
+          label: 'Product Vote Count',
+          data: productRank.productList.map(function (prod) { return prod.voteTally; }),
+        }]
+      },
+      options: {
+        scales: {
+          yAxes: [{
+            ticks: {
+              beginAtZero: true,
+              fixedStepSize: 1
+            }
+          }]
+        }
+      }
+    });
 
     // Change the button to a replay button
     productRank.showButton('Restart Game', productRank.startGame);
-  },
-
-  appendTableRow: function (table, rowItems, type) {
-    var row = document.createElement('tr');
-    table.appendChild(row);
-
-    for (let i = 0; i < rowItems.length; i++) {
-      let cell = document.createElement(type);
-      cell.textContent = rowItems[i];
-      row.appendChild(cell);
-    }
   },
 
   onClick: function(e) {
