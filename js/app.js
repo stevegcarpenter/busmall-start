@@ -48,13 +48,13 @@ var baseProductNames = [
 var productRank = {
   productHash: {}, /* key is product path */
   productList: [], /* list of all products */
-  /* two bags to hold products */
+  /* two bags to hold products for display purposes */
   bag: {
     a: [],
     b: [],
   },
-  imageIds: ['img-1', 'img-2', 'img-3'],
-  imageEls: [],
+  imgEls: [],
+  clickCount: 0,
 
   generateProducts: function () {
     for (let i = 0; i < baseProductNames.length; i++) {
@@ -68,24 +68,35 @@ var productRank = {
   },
 
   configureListeners: function () {
-    for (let i = 0; i < this.imageIds.length; i++) {
+    var section = document.getElementById('images-section');
+    for (let i = 0; i < NUMIMGTODISPLAY; i++) {
       // obtain the image element
-      var imgEl = document.getElementById(this.imageIds[i]);
+      var imgEl = document.createElement('img');
+      imgEl.id = 'img-'.concat(i);
+      imgEl.className = 'click-images';
+
       // store it for retrieval
-      this.imageEls.push(imgEl);
+      this.imgEls.push(imgEl);
       imgEl.addEventListener('click', this.onClick);
+
+      // Attach to page
+      section.appendChild(imgEl);
     }
   },
 
   initGame: function () {
+    console.log('Re-initializing game.')
     // clear product stats
-    this.productList.map(function (prod) {
-    for (var i in this.productList) {
-      prod = this.productList[i];
+    for (let i in this.productList) {
+      let prod = this.productList[i];
       prod.voteTally = 0;
       prod.shownTally = 0;
+      // bag-a is the starting bag
       this.bag.a.push(prod);
     }
+    // set bag-b empty
+    this.bag.b = [];
+    this.clickCount = 0;
   },
 
   getRandomIndex: function(arrayLength) {
@@ -96,29 +107,28 @@ var productRank = {
   },
 
   displayImages: function() {
-    var dupeLUT = {};
-    this.imageEls.map(function (imgEl) {
-      let idx;
-      var prod;
-      // Bag a products have top priority
+    let idx;
+    var prod;
+
+    // populate all image elements
+    for (let i = 0; i < this.imgEls.length; i++) {
+      // Program starts with only bag-a populated
       if (this.bag.a.length > 0) {
         idx = this.getRandomIndex(this.bag.a.length);
         // get product, remove it from bag-a list
         prod = this.bag.a.splice(idx, 1)[0];
-        // add to the dupeLUT
-        dupeLUT[prod.path] = true;
+        // add product to bag-b
+        this.bag.b.push(prod);
       } else {
         // find an image, avoid duplicate
-        do {
-          idx = this.getRandomIndex(this.productList.length);
-          prod = this.productList[idx];
-        } while (dupeLUT[prod.src] === true);
-        dupeLUT[prod.src] = true;
+        idx = this.getRandomIndex(this.bag.b.length);
+        prod = this.bag.b.splice(idx, 1)[0];
       }
 
-      // Set the image
-      imgEl.src = prod.src;
-    });
+      // Set the image source and append it to the section
+      var imgEl = this.imgEls[i];
+      imgEl.src = prod.path;
+    }
   },
 
   tallyClicks: function(elementId) {
@@ -133,30 +143,14 @@ var productRank = {
     // TODO: Hmm... what's going to happen here?
   },
 
-  onClick: function() {
-    // TODO: Hmm... what's going to happen here?
+  onClick: function(e) {
+    var pathArr = e.target.src.split('/');
+    var path = 'img/'.concat(pathArr[pathArr.length - 1])
+
+    console.log('Received click inside:', path);
   }
 };
 
 productRank.generateProducts();
-// productRank.configureListeners();
-// productRank.displayImages();
-
-// function initElement() {
-//   var img = document.getElementById('img-1');
-//   // NOTE: showAlert(); or showAlert(param); will NOT work here.
-//   // Must be a reference to a function name, not a function call.
-//   console.log('Added click listener!');
-//   img.addEventListener('click', showAlert);
-// }
-
-// function showAlert(e) {
-//   e.preventDefault();
-//   console.log('Entered Event');
-//   console.log('target:', e.target);
-//   console.log('target.id:', e.target.id);
-//   console.log('target.src', e.target.src);
-//   e.target.src = 'img/banana.jpg';
-// }
-
-// initElement();
+productRank.configureListeners();
+productRank.displayImages();
