@@ -19,13 +19,11 @@ function Product(filenameBase) {
  * All Execution and Globals Below
  */
 const NUMIMGTODISPLAY = 3;
-const MAXCLICKS = 5;
+const MAXCLICKS = 25;
 var baseProductNames = [
   'bag',
   'banana',
-  'baseball-wineholder',
   'bathroom',
-  'big-chair',
   'boots',
   'breakfast',
   'bubblegum',
@@ -33,7 +31,6 @@ var baseProductNames = [
   'cthulhu',
   'dog-duck',
   'dragon',
-  'neck-protector',
   'pen',
   'pet-sweep',
   'scissors',
@@ -87,7 +84,13 @@ var productRank = {
   },
 
   initGame: function () {
-    console.log('Re-initializing game.')
+    console.log('Re-initializing game.');
+    // blow away any buttons and tables
+    let section = document.getElementById('button-section');
+    section.innerHTML = '';
+    section = document.getElementById('results-section');
+    section.innerHTML = '';
+
     // clear product stats
     for (let i in this.productList) {
       let prod = this.productList[i];
@@ -165,23 +168,15 @@ var productRank = {
     console.log('prod arr', products);
   },
 
-  tallyClicks: function(elementId) {
-    // TODO: Hmm... what's going to happen here?
-  },
-
-  displayResults: function() {
-    // TODO: Hmm... what's going to happen here?
-  },
-
-  showResultsButton: function() {
+  showButton: function(text, handler) {
     var section = document.getElementById('button-section');
     var button = document.createElement('input');
     // clear the button section first
     section.innerHTML = '';
     button.type = 'button';
-    button.value = 'Show Results';
+    button.value = text;
     section.appendChild(button);
-    button.addEventListener('click', productRank.showResults);
+    button.addEventListener('click', handler);
   },
 
   showResults: function() {
@@ -196,6 +191,9 @@ var productRank = {
       let percent = Math.floor((prod.voteTally * 100) / prod.shownTally);
       productRank.appendTableRow(table, [prod.displayName, prod.voteTally, isNaN(percent) ? '0%' : percent.toString().concat('%')], 'td');
     }
+
+    // Change the button to a replay button
+    productRank.showButton('Restart Game', productRank.startGame);
   },
 
   appendTableRow: function (table, rowItems, type) {
@@ -227,7 +225,7 @@ var productRank = {
 
       // Display the results button if the game just ended
       if (productRank.clickCount === MAXCLICKS) {
-        productRank.showResultsButton();
+        productRank.showButton('Show Results', productRank.showResults);
       }
     }
   },
