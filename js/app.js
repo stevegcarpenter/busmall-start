@@ -91,18 +91,20 @@ var productRank = {
     section = document.getElementById('results-section');
     section.innerHTML = '';
 
+    // empty both bags, set bag-a active and then fill bag-a
+    // games always start picking from on bag-a
+    this.bag.a = [];
+    this.bag.b = [];
+    this.bag.active = 'a';
+    this.clickCount = 0;
+
     // clear product stats
     for (let i in this.productList) {
       let prod = this.productList[i];
-      prod.voteTally = 0;
-      prod.shownTally = 0;
       // bag-a is the starting bag
       this.bag.a.push(prod);
       console.log('Initializing product:', prod);
     }
-    // set bag-b empty
-    this.bag.b = [];
-    this.clickCount = 0;
   },
 
   getRandomIndex: function(arrayLength) {
