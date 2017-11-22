@@ -18,6 +18,7 @@ function Product(filenameBase) {
 /*****************************************************************************
  * All Execution and Globals Below
  */
+const NUMIMGTODISPLAY = 3;
 var baseProductNames = [
   'bag',
   'banana',
