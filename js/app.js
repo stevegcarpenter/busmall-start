@@ -229,11 +229,6 @@ var productRank = {
       console.log('Acquired product from click:', prod);
 
       productRank.displayImages();
-
-      // Display the results button if the game just ended
-      if (productRank.clickCount === MAXCLICKS) {
-        productRank.showButton('Show Results', productRank.showResults);
-      }
     }
   },
 
