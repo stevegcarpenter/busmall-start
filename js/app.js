@@ -50,6 +50,7 @@ var productRank = {
   productList: [], /* list of all products */
   /* two bags to hold products for display purposes */
   bag: {
+    active: 'a',
     a: [],
     b: [],
   },
@@ -93,6 +94,7 @@ var productRank = {
       prod.shownTally = 0;
       // bag-a is the starting bag
       this.bag.a.push(prod);
+      console.log('Initializing product:', prod);
     }
     // set bag-b empty
     this.bag.b = [];
@@ -101,34 +103,65 @@ var productRank = {
 
   getRandomIndex: function(arrayLength) {
     // Generate a random index number that falls within our product list
-    var ran = Math.floor(Math.random() * arrayLength);
-    console.log('RandomIndex:', ran);
-    return ran;
+    return Math.floor(Math.random() * arrayLength);
   },
 
   displayImages: function() {
+    /*
+     *Pull three items and put them in a products array. This guarantees
+     * no duplicates for this particular showing of images. Whichever bag
+     * was used to pull items from previously is the active bag. Place all
+     * of the items in the opposite bag. This method should be fairly
+     * efficient and guarantee no duplicates, that all images are displayed
+     * before re-displaying other images.
+     */
     let idx;
     var prod;
+    var products = [];
 
     // populate all image elements
     for (let i = 0; i < this.imgEls.length; i++) {
-      // Program starts with only bag-a populated
-      if (this.bag.a.length > 0) {
+      // Check if the active bag needs to be updated
+      if (this.bag.a.length === 0) {
+        this.bag.active = 'b';
+      } else if (this.bag.b.length === 0) {
+        this.bag.active = 'a';
+      }
+
+      // Use the active bucket as long as it isn't empty
+      if (this.bag.active === 'a') {
         idx = this.getRandomIndex(this.bag.a.length);
         // get product, remove it from bag-a list
         prod = this.bag.a.splice(idx, 1)[0];
-        // add product to bag-b
-        this.bag.b.push(prod);
+        console.log('Pulling', prod.displayName, ' from bag a');
+        // add product to products
+        products.push(prod);
       } else {
         // find an image, avoid duplicate
         idx = this.getRandomIndex(this.bag.b.length);
+        // get product, remove it from bag-a list
         prod = this.bag.b.splice(idx, 1)[0];
+        console.log('Pulling', prod.displayName, 'from bag b');
+        // add product to products
+        products.push(prod);
       }
 
       // Set the image source and append it to the section
       var imgEl = this.imgEls[i];
       imgEl.src = prod.path;
+      // Increment the display
+      prod.shownTally++;
     }
+
+    // place all chosen items into the bucket last active
+    if (this.bag.active === 'a') {
+      this.bag.b.push.apply(this.bag.b, products);
+    } else {
+      this.bag.a.push.apply(this.bag.a, products);
+    }
+    console.log('bag a:', this.bag.a);
+    console.log('bag b:', this.bag.b);
+    console.log('prod arr', products);
   },
 
   tallyClicks: function(elementId) {
@@ -139,18 +172,47 @@ var productRank = {
     // TODO: Hmm... what's going to happen here?
   },
 
-  showButton: function() {
-    // TODO: Hmm... what's going to happen here?
+  showResultsButton: function() {
+    var section = document.getElementById('button-section');
+    var button = document.createElement('input');
+    // clear the button section first
+    section.innerHTML = '';
+    button.type = 'button';
+    button.value = 'Show Results';
+    section.appendChild(button);
+    button.addEventListener('click', productRank.showResults);
   },
 
   onClick: function(e) {
-    var pathArr = e.target.src.split('/');
-    var path = 'img/'.concat(pathArr[pathArr.length - 1])
+    console.log('Click Count:', productRank.clickCount);
+    // Check if the game is already over
+    if (productRank.clickCount < 25) {
+      var pathArr = e.target.src.split('/');
+      var path = 'img/'.concat(pathArr[pathArr.length - 1]);
+      console.log('path:', path);
+      var prod = productRank.productHash[path];
 
-    console.log('Received click inside:', path);
+      productRank.clickCount++;
+      prod.voteTally++;
+      console.log('clickCount:', productRank.clickCount);
+      console.log('Acquired product from click:', prod);
+
+      productRank.displayImages();
+
+      // Display the results button if the game just ended
+      if (productRank.clickCount === 25) {
+        ;;;
+        console.log('Displaying the submit button');
+      }
+    }
+  },
+
+  startGame: function () {
+    productRank.initGame();
+    productRank.displayImages();
   }
 };
 
 productRank.generateProducts();
 productRank.configureListeners();
-productRank.displayImages();
+productRank.startGame();
