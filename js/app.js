@@ -37,7 +37,6 @@ var baseProductNames = [
   'pet-sweep',
   'scissors',
   'shark',
-  'six-pack-bicycle',
   'sweep',
   'tauntaun',
   'unicorn',
