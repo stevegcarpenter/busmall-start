@@ -2,16 +2,15 @@
 
 function generateDisplayString(str, delimiter) {
   return str
-    .split(delimiter)
-    .map(function(word) {
+    .split(delimiter).map(function(word) {
       return word[0].toUpperCase() + word.substr(1);
-    })
-    .join(' ');
+    }).join(' ');
 }
 
 function Product(filenameBase) {
   this.displayName = generateDisplayString(filenameBase, '-');
-  this.src = 'img/'.concat(filenameBase).concat('.jpg');
+  this.baseName = filenameBase;
+  this.path = 'img/'.concat(filenameBase).concat('.jpg');
   this.voteTally = 0;
   this.shownTally = 0;
 }
@@ -19,103 +18,151 @@ function Product(filenameBase) {
 /*****************************************************************************
  * All Execution and Globals Below
  */
+const NUMIMGTODISPLAY = 3;
+const MAXCLICKS = 5;
 var baseProductNames = [
-  'baby-broom',
-  'banana',
-  'bathroom',
-  'boots',
-  'bubblegum',
-  'cthulhu',
-  'dragon',
-  'pen',
-  'scissors',
-  'six-pack-bicycle',
-  'tauntaun',
-  'usb',
-  'wine-glass',
   'bag',
+  'banana',
   'baseball-wineholder',
+  'bathroom',
   'big-chair',
+  'boots',
   'breakfast',
+  'bubblegum',
   'chair',
+  'cthulhu',
   'dog-duck',
+  'dragon',
   'neck-protector',
+  'pen',
   'pet-sweep',
+  'scissors',
   'shark',
   'sweep',
+  'tauntaun',
   'unicorn',
-  'water-can'
+  'usb',
+  'water-can',
+  'wine-glass',
 ];
 
 var productRank = {
-  productHash: {}, /* look up table for events */
+  productHash: {}, /* key is product path */
   productList: [], /* list of all products */
-  unseen: [], /* only products that haven't been seen yet */
-  imageIds: ['img-1', 'img-2', 'img-3'],
-  imageEls: [],
+  /* two bags to hold products for display purposes */
+  bag: {
+    active: 'a',
+    a: [],
+    b: [],
+  },
+  imgEls: [],
+  clickCount: 0,
 
   generateProducts: function () {
-    baseProductNames.map(function (baseProductName) {
-      var prod = new Product(baseProductName);
+    for (let i = 0; i < baseProductNames.length; i++) {
+      var prod = new Product(baseProductNames[i]);
+      console.log('Product:', prod);
       // add it to the hash based on filepath
-      this.productHash[prod.src] = prod;
+      this.productHash[prod.path] = prod;
       // add it to the product list
       this.productList.push(prod);
-    });
+    }
   },
 
   configureListeners: function () {
-    this.imageIds.map(function (imgId) {
+    var section = document.getElementById('images-section');
+    for (let i = 0; i < NUMIMGTODISPLAY; i++) {
       // obtain the image element
-      var imgEl = document.getElementById(imgId);
+      var imgEl = document.createElement('img');
+      imgEl.id = 'img-'.concat(i);
+      imgEl.className = 'click-images';
+
       // store it for retrieval
-      this.imageEls.push(imgEl);
+      this.imgEls.push(imgEl);
       imgEl.addEventListener('click', this.onClick);
-    });
+
+      // Attach to page
+      section.appendChild(imgEl);
+    }
   },
 
   initGame: function () {
+    console.log('Re-initializing game.')
     // clear product stats
-    this.productList.map(function (prod) {
+    for (let i in this.productList) {
+      let prod = this.productList[i];
       prod.voteTally = 0;
       prod.shownTally = 0;
-      this.unseen.push(prod);
-    });
+      // bag-a is the starting bag
+      this.bag.a.push(prod);
+      console.log('Initializing product:', prod);
+    }
+    // set bag-b empty
+    this.bag.b = [];
+    this.clickCount = 0;
   },
 
   getRandomIndex: function(arrayLength) {
-    var min = 0;
-    var max = arrayLength - 1;
     // Generate a random index number that falls within our product list
-    var ran = Math.floor(Math.random() * (max - min + 1)) + min;
-    console.log('RandomIndex:', ran);
-    return ran;
+    return Math.floor(Math.random() * arrayLength);
   },
 
   displayImages: function() {
-    var dupeLUT = {};
-    this.imageEls.map(function (imgEl) {
-      let idx;
-      var prod;
-      // Unseen products have top priority
-      if (this.unseen.length > 0) {
-        idx = this.getRandomIndex(this.unseen.length);
-        // get product, remove it from unseen list
-        prod = this.unseen.splice(idx, 1)[0];
-        // add to the dupeLUT
-        dupeLUT[prod.src] = true;
-      } else {
-        // find an image, avoid duplicate
-        do {
-          idx = this.getRandomIndex(this.productList.length);
-          prod = this.productList[idx];
-        } while (dupeLUT[prod.src] === true);
-        dupeLUT[prod.src] = true;
+    /*
+     *Pull three items and put them in a products array. This guarantees
+     * no duplicates for this particular showing of images. Whichever bag
+     * was used to pull items from previously is the active bag. Place all
+     * of the items in the opposite bag. This method should be fairly
+     * efficient and guarantee no duplicates, that all images are displayed
+     * before re-displaying other images.
+     */
+    let idx;
+    var prod;
+    var products = [];
+
+    // populate all image elements
+    for (let i = 0; i < this.imgEls.length; i++) {
+      // Check if the active bag needs to be updated
+      if (this.bag.a.length === 0) {
+        this.bag.active = 'b';
+      } else if (this.bag.b.length === 0) {
+        this.bag.active = 'a';
       }
 
-      // Set the image
-      imgEl.src = prod.src;
-    });
+      // Use the active bucket as long as it isn't empty
+      if (this.bag.active === 'a') {
+        idx = this.getRandomIndex(this.bag.a.length);
+        // get product, remove it from bag-a list
+        prod = this.bag.a.splice(idx, 1)[0];
+        console.log('Pulling', prod.displayName, ' from bag a');
+        // add product to products
+        products.push(prod);
+      } else {
+        // find an image, avoid duplicate
+        idx = this.getRandomIndex(this.bag.b.length);
+        // get product, remove it from bag-a list
+        prod = this.bag.b.splice(idx, 1)[0];
+        console.log('Pulling', prod.displayName, 'from bag b');
+        // add product to products
+        products.push(prod);
+      }
+
+      // Set the image source and append it to the section
+      var imgEl = this.imgEls[i];
+      imgEl.src = prod.path;
+      // Increment the display
+      prod.shownTally++;
+    }
+
+    // place all chosen items into the bucket last active
+    if (this.bag.active === 'a') {
+      this.bag.b.push.apply(this.bag.b, products);
+    } else {
+      this.bag.a.push.apply(this.bag.a, products);
+    }
+    console.log('bag a:', this.bag.a);
+    console.log('bag b:', this.bag.b);
+    console.log('prod arr', products);
   },
 
   tallyClicks: function(elementId) {
@@ -126,34 +173,71 @@ var productRank = {
     // TODO: Hmm... what's going to happen here?
   },
 
-  showButton: function() {
-    // TODO: Hmm... what's going to happen here?
+  showResultsButton: function() {
+    var section = document.getElementById('button-section');
+    var button = document.createElement('input');
+    // clear the button section first
+    section.innerHTML = '';
+    button.type = 'button';
+    button.value = 'Show Results';
+    section.appendChild(button);
+    button.addEventListener('click', productRank.showResults);
   },
 
-  onClick: function() {
-    // TODO: Hmm... what's going to happen here?
+  showResults: function() {
+    var section = document.getElementById('results-section');
+    var table = document.createElement('table');
+    section.appendChild(table);
+
+    productRank.appendTableRow(table, ['', 'Score', 'Percent Chosen'], 'th');
+
+    for (var i in productRank.productList) {
+      let prod = productRank.productList[i];
+      let percent = Math.floor((prod.voteTally * 100) / prod.shownTally);
+      productRank.appendTableRow(table, [prod.displayName, prod.voteTally, isNaN(percent) ? '0%' : percent.toString().concat('%')], 'td');
+    }
+  },
+
+  appendTableRow: function (table, rowItems, type) {
+    var row = document.createElement('tr');
+    table.appendChild(row);
+
+    for (let i = 0; i < rowItems.length; i++) {
+      let cell = document.createElement(type);
+      cell.textContent = rowItems[i];
+      row.appendChild(cell);
+    }
+  },
+
+  onClick: function(e) {
+    console.log('Click Count:', productRank.clickCount);
+    // Check if the game is already over
+    if (productRank.clickCount < MAXCLICKS) {
+      var pathArr = e.target.src.split('/');
+      var path = 'img/'.concat(pathArr[pathArr.length - 1]);
+      console.log('path:', path);
+      var prod = productRank.productHash[path];
+
+      productRank.clickCount++;
+      prod.voteTally++;
+      console.log('clickCount:', productRank.clickCount);
+      console.log('Acquired product from click:', prod);
+
+      productRank.displayImages();
+
+      // Display the results button if the game just ended
+      if (productRank.clickCount === MAXCLICKS) {
+        productRank.showResultsButton();
+      }
+    }
+  },
+
+  startGame: function () {
+    productRank.initGame();
+    productRank.displayImages();
   }
 };
 
 productRank.generateProducts();
 productRank.configureListeners();
-productRank.displayImages();
-
-// function initElement() {
-//   var img = document.getElementById('img-1');
-//   // NOTE: showAlert(); or showAlert(param); will NOT work here.
-//   // Must be a reference to a function name, not a function call.
-//   console.log('Added click listener!');
-//   img.addEventListener('click', showAlert);
-// }
-
-// function showAlert(e) {
-//   e.preventDefault();
-//   console.log('Entered Event');
-//   console.log('target:', e.target);
-//   console.log('target.id:', e.target.id);
-//   console.log('target.src', e.target.src);
-//   e.target.src = 'img/banana.jpg';
-// }
-
-// initElement();
+productRank.startGame();
