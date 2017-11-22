@@ -19,6 +19,7 @@ function Product(filenameBase) {
  * All Execution and Globals Below
  */
 const NUMIMGTODISPLAY = 3;
+const MAXCLICKS = 5;
 var baseProductNames = [
   'bag',
   'banana',
@@ -183,10 +184,35 @@ var productRank = {
     button.addEventListener('click', productRank.showResults);
   },
 
+  showResults: function() {
+    var section = document.getElementById('results-section');
+    var table = document.createElement('table');
+    section.appendChild(table);
+
+    productRank.appendTableRow(table, ['', 'Score', 'Percent Chosen'], 'th');
+
+    for (var i in productRank.productList) {
+      let prod = productRank.productList[i];
+      let percent = Math.floor((prod.voteTally * 100) / prod.shownTally);
+      productRank.appendTableRow(table, [prod.displayName, prod.voteTally, isNaN(percent) ? '0%' : percent.toString().concat('%')], 'td');
+    }
+  },
+
+  appendTableRow: function (table, rowItems, type) {
+    var row = document.createElement('tr');
+    table.appendChild(row);
+
+    for (let i = 0; i < rowItems.length; i++) {
+      let cell = document.createElement(type);
+      cell.textContent = rowItems[i];
+      row.appendChild(cell);
+    }
+  },
+
   onClick: function(e) {
     console.log('Click Count:', productRank.clickCount);
     // Check if the game is already over
-    if (productRank.clickCount < 25) {
+    if (productRank.clickCount < MAXCLICKS) {
       var pathArr = e.target.src.split('/');
       var path = 'img/'.concat(pathArr[pathArr.length - 1]);
       console.log('path:', path);
@@ -200,9 +226,8 @@ var productRank = {
       productRank.displayImages();
 
       // Display the results button if the game just ended
-      if (productRank.clickCount === 25) {
-        ;;;
-        console.log('Displaying the submit button');
+      if (productRank.clickCount === MAXCLICKS) {
+        productRank.showResultsButton();
       }
     }
   },
