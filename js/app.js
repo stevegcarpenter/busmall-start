@@ -54,6 +54,7 @@ var productRank = {
   },
   imgEls: [],
   clickCount: 0,
+  chart: null,
 
   generateProducts: function () {
     for (let i = 0; i < baseProductNames.length; i++) {
@@ -90,6 +91,7 @@ var productRank = {
     section.innerHTML = '';
     section = document.getElementById('results-section');
     section.innerHTML = '';
+    productRank.showResults();
 
     // empty both bags, set bag-a active and then fill bag-a
     // games always start picking from on bag-a
@@ -176,20 +178,20 @@ var productRank = {
     // clear the button section first
     section.innerHTML = '';
     button.type = 'button';
-    button.className = 'game-button'
+    button.className = 'game-button';
     button.value = text;
     section.appendChild(button);
     button.addEventListener('click', handler);
   },
 
-  showResults: function() {
+  showResults: function () {
     var section = document.getElementById('results-section');
     var canvas = document.createElement('canvas');
     section.appendChild(canvas);
     canvas.id = 'results-chart';
 
     var ctx = canvas.getContext('2d');
-    var myChart = new Chart(ctx, {
+    productRank.chart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: productRank.productList.map(function (prod) { return prod.displayName; }),
@@ -209,9 +211,13 @@ var productRank = {
         }
       }
     });
+  },
 
-    // Change the button to a replay button
-    productRank.showButton('Restart Game', productRank.startGame);
+  updateResults: function () {
+    productRank.chart.data.datasets[0].data = productRank.productList.map(function (prod) {
+      return prod.voteTally;
+    });
+    productRank.chart.update();
   },
 
   onClick: function(e) {
@@ -228,21 +234,43 @@ var productRank = {
       console.log('clickCount:', productRank.clickCount);
       console.log('Acquired product from click:', prod);
 
-      productRank.displayImages();
+      productRank.stashProductStats();
+      productRank.updateResults();
 
-      // Display the results button if the game just ended
       if (productRank.clickCount === MAXCLICKS) {
-        productRank.showButton('Show Results', productRank.showResults);
+        productRank.showButton('Restart Game', productRank.startGame);
       }
+
+      productRank.displayImages();
     }
   },
 
   startGame: function () {
     productRank.initGame();
     productRank.displayImages();
-  }
+  },
+
+  stashProductStats: function () {
+    window.localStorage.setItem('products', JSON.stringify(this.productList));
+  },
+
+  unstashLocalStorage: function () {
+    var json = window.localStorage.getItem('products');
+
+    if (!json)
+      return;
+
+    var products = JSON.parse(json);
+    products.map(function (p) {
+      var prod = productRank.productHash[p.path];
+      // restore preserved data
+      prod.voteTally = p.voteTally;
+      prod.shownTally = p.shownTally;
+    });
+  },
 };
 
 productRank.generateProducts();
 productRank.configureListeners();
+productRank.unstashLocalStorage();
 productRank.startGame();
