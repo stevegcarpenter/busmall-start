@@ -251,16 +251,11 @@ var productRank = {
   },
 
   stashProductStats: function () {
-    window.localStorage.setItem('products', JSON.stringify(this.productList));
+    localStorage.setItem('products', JSON.stringify(this.productList));
   },
 
   unstashLocalStorage: function () {
-    var json = window.localStorage.getItem('products');
-
-    if (!json)
-      return;
-
-    var products = JSON.parse(json);
+    var products = JSON.parse(localStorage.products);
     products.map(function (p) {
       var prod = productRank.productHash[p.path];
       // restore preserved data
@@ -272,5 +267,5 @@ var productRank = {
 
 productRank.generateProducts();
 productRank.configureListeners();
-productRank.unstashLocalStorage();
+if (localStorage.products) productRank.unstashLocalStorage();
 productRank.startGame();
